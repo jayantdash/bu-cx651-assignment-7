@@ -29,7 +29,50 @@ Returns 0 or 1 if player 0 or 1 has won respectively.
 Returns -1 if there is no winner.
 */
 int check_win(struct game* g) {
-   
+    // Directions to check for a win: horizontal, vertical, diagonal down-right, diagonal down-left.
+    int dirs[4][2] = {
+        {0, 1},   // Horizontal
+        {1, 0},   // Vertical
+        {1, 1},   // Diagonal down-right
+        {1, -1}   // Diagonal down-left
+    };
+
+    for (int r = 0; r < BOARD_ROWS; r++) {
+        for (int c = 0; c < BOARD_COLS; c++) {
+            // Get the player at the current cell.
+            int player = g->board.mat[r][c];
+            // Skip empty cells.
+            if (player == EMPTY_CELL) {
+                continue;
+            }
+            // Check all four directions for a possible win.
+            for (int d = 0; d < 4; d++) {
+                // Count the current cell as the first in the sequence.
+                int count = 1; 
+
+                // Get the row and column increments for the current direction.
+                int dr = dirs[d][0];
+                int dc = dirs[d][1];
+
+                // Initialize the next row and column to check in the current direction.
+                int nr = r + dr;
+                int nc = c + dc;
+
+                // Continue checking in the current direction until the sequence ends or a win is found.
+                while (nr >= 0 && nr < BOARD_ROWS && nc >= 0 && nc < BOARD_COLS && g->board.mat[nr][nc] == player) {
+                    count++;
+                    if (count == 4) {
+                        // return when a winning sequence of 4 is found for the current player.
+                        return player;
+                    }
+                    // Move to the next cell in the current direction.
+                    nr += dr;
+                    nc += dc;
+                }
+            }
+        }
+    }
+    return -1;
 }
  
 /*
