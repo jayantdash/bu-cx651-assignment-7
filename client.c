@@ -50,9 +50,88 @@ int main() {
     int choice = 0;
     scanf("%d", &choice);
 
-    // TODO: implement client logic
+    struct request req = {0};
+    struct response res = {0};
+
+    if (choice != 1 && choice != 2) { 
+        close(sock_fd); 
+        return 1; 
+    }
+
+    req.type = (choice == 1) ? REQ_CREATE : REQ_JOIN;
+
+    if (req.type == REQ_JOIN) {
+        printf("Game ID? >");
+        scanf("%d", &req.gameId);
+    }
+    // send the initial request to the server
+    sendto(sock_fd, &req, sizeof(req), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    socklen_t addr_len = sizeof(server_addr);
+    // receive the initial response from the server
+    if (recvfrom(sock_fd, &res, sizeof(res), 0, (struct sockaddr *)&server_addr, &addr_len) != sizeof(res)) {
+        close(sock_fd); return 1;
+    }
+
+    if (res.status == STATUS_ERROR) {
+        printf("Unable to create or join game\n");
+        close(sock_fd); {
+            return 1;
+        }    
+    }
+
+    int gameId = res.gameId;
+    int player = res.player;
+    int first = 1;
+    while (1) {
+        if (first || res.ready) {
+            printf("Current Game\n");
+            printf("---------------------\n");
+            printf("GameID: %d\n", gameId);
+            print_board((int *)res.board.mat);
+        }
+        first = 0;
+        if (res.status == STATUS_WIN || res.status == STATUS_LOSE) {
+            printf(res.status == STATUS_WIN ? "YOU WIN!\n" : "YOU LOSE!\n");
+            break;
+        }
+        if (res.status == STATUS_ERROR) {
+            printf("Invalid request\n");
+            break;
+        }
+        int full = 1;
+        // check if the board is full
+        for (int i = 0; i < BOARD_ROWS * BOARD_COLS; i++) {
+            if (((int *)res.board.mat)[i] == EMPTY_CELL) full = 0;
+        }
+        // if the board is full, the game is a tie
+        if (res.status == STATUS_TIE || full) { 
+            printf("TIE\n"); 
+            break; 
+        }
+        
+        if (res.ready && res.player == player && (res.next_player == player)) {
+            int col;
+            printf("Input Move Column: > ");
+            fflush(stdout);
+            if (scanf("%d", &col) != 1) {
+                printf("Invalid input\n");
+                break;
+            }
+            req.type = REQ_MOVE;
+            req.gameId = gameId;
+            req.col = col;
+            sendto(sock_fd, &req, sizeof(req), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        } else {
+            printf("waiting for other player...\n\n");
+            fflush(stdout);
+        }
+
+        if (recvfrom(sock_fd, &res, sizeof(res), 0, (struct sockaddr *)&server_addr, &addr_len) != sizeof(res)) {
+            printf("Failed to receive response from server\n");
+            break;
+        }
+    }
 
     close(sock_fd);
-
     return 0;
 }
