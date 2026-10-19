@@ -83,8 +83,8 @@ run_crash() {
     rm -f .restarted
 }
 
-pkill server
-pkill client
+# pkill server
+# pkill client
 
 for dir in "${tests[@]}"; do
     dir=${dir%/}

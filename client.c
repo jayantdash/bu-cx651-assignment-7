@@ -47,6 +47,7 @@ int main() {
     printf("  1) Create a new game\n");
     printf("  2) Join a game\n");
     printf("> ");
+    fflush(stdout);
     int choice = 0;
     scanf("%d", &choice);
 
@@ -62,7 +63,11 @@ int main() {
 
     if (req.type == REQ_JOIN) {
         printf("Game ID? >");
+        fflush(stdout);
         scanf("%d", &req.gameId);
+        printf("\n");
+    } else {
+        printf("\n");
     }
     // send the initial request to the server
     sendto(sock_fd, &req, sizeof(req), 0, (struct sockaddr *)&server_addr, sizeof(server_addr));
@@ -111,12 +116,13 @@ int main() {
         
         if (res.ready && res.player == player && (res.next_player == player)) {
             int col;
-            printf("Input Move Column: > ");
+            printf("\nInput Move Row: > ");
             fflush(stdout);
             if (scanf("%d", &col) != 1) {
                 printf("Invalid input\n");
                 break;
             }
+            printf("\n");
             req.type = REQ_MOVE;
             req.gameId = gameId;
             req.col = col;
